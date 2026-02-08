@@ -90,7 +90,7 @@ const StageIntro = ({
         >
           {isLoading ? (
             <span className="flex items-center gap-2 text-sm">
-              กำลังเตรียมของขวัญ...
+              Loading...
             </span>
           ) : (
             <>Get Start <ArrowRight size={20} /></>
@@ -270,7 +270,7 @@ const StageInteractive = ({ onNext }: { onNext: () => void }) => {
         )}
       </AnimatePresence>
 
-      <div className="absolute bottom-40 h-16 flex items-center justify-center w-full z-0">
+      <div className="absolute bottom-20 h-16 flex items-center justify-center w-full z-0">
         <AnimatePresence>
           {isAllViewed && !activeId && (
             <motion.button
