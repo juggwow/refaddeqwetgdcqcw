@@ -10,16 +10,33 @@ const CONFIG = {
   partnerName: "Teerak",
   memoryImage: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=2000&auto=format&fit=crop",
   reassuranceText: [
-    "รู้ไหม...",
-    "โลกอาจจะใจร้ายในบางวัน",
-    "แต่เค้าจะเป็น Safe Zone",
-    "ให้เธอเสมอเลยนะ ❤️",
+    "ในวันที่เธอมีความสุข",
+    "ในวันที่เธอมีความทุกข์",
+    "หรือในวันที่เธอไม่สบายใจ",
+    "เราพร้อมรับฟังและจะอยู่ข้างเธอเสมอ ❤️",
   ],
+  // --- แก้ไขส่วนนี้ (ใส่รูปที่ต้องการให้เด้งออกมา) ---
   reasons: [
-    "รอยยิ้มของเธอ",
-    "เสียงหัวเราะ",
-    "ความใจดี",
-    "แก้มย้อยๆ"
+    {
+      id: 1,
+      text: "ในตอนเธอยิ้มให้",
+      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=800&auto=format&fit=crop"
+    },
+    {
+      id: 2,
+      text: "ในตอนที่เที่ยวด้วยกัน",
+      image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=800&auto=format&fit=crop"
+    },
+    {
+      id: 3,
+      text: "ในตอนที่กินของอร่อย",
+      image: "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?q=80&w=800&auto=format&fit=crop"
+    },
+    {
+      id: 4,
+      text: "และทุกๆตอน",
+      image: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=800&auto=format&fit=crop"
+    },
   ],
 };
 
@@ -48,19 +65,11 @@ const StageIntro = ({ onNext, onStartMusic }: { onNext: () => void, onStartMusic
         >
           <Heart size={100} fill="currentColor" />
         </motion.div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white font-bold text-lg pointer-events-none">
-          TAP ME
-        </div>
       </div>
 
-      <div className="space-y-2">
-        {/* <h1 className="text-3xl font-bold text-rose-800 tracking-wider">
-          For {CONFIG.partnerName}
-        </h1> */}
-        {/* <p className="text-rose-400 text-sm animate-pulse">
-            (แตะหัวใจเพื่อเริ่ม & เปิดเพลง)
-          </p> */}
-      </div>
+      <button onClick={onNext} className="bg-rose-500 active:bg-rose-600 text-white px-8 py-3 rounded-full flex items-center gap-2 shadow-lg shadow-rose-200 font-medium text-lg touch-manipulation">
+        Get Start
+      </button>
     </motion.div>
   );
 };
@@ -81,72 +90,47 @@ const StageMemory = ({ onNext }: { onNext: () => void }) => (
       </div>
     </div>
     <button onClick={onNext} className="bg-rose-500 active:bg-rose-600 text-white px-8 py-3 rounded-full flex items-center gap-2 shadow-lg shadow-rose-200 font-medium text-lg touch-manipulation">
-      ไปต่อครับ <ArrowRight size={20} />
+      <ArrowRight size={20} />
     </button>
   </motion.div>
 );
 
 const StageReassurance = ({ onNext }: { onNext: () => void }) => {
-  useEffect(() => {
-    const timer = setTimeout(onNext, 9000);
-    return () => clearTimeout(timer);
-  }, [onNext]);
+  // State สำหรับเช็คว่าข้อความขึ้นครบหรือยัง
+  const [isFinished, setIsFinished] = useState(false);
 
   return (
-    <motion.div className="px-8 text-center flex flex-col justify-center h-full space-y-6" onClick={onNext}>
+    <div className="px-8 text-center flex flex-col justify-center h-full space-y-6 relative z-10">
       {CONFIG.reassuranceText.map((text, index) => (
         <motion.p
           key={index}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 1.8, duration: 1 }}
+          // ตรวจจับว่าบรรทัดสุดท้ายแสดงผลเสร็จหรือยัง
+          onAnimationComplete={() => {
+            if (index === CONFIG.reassuranceText.length - 1) {
+              setIsFinished(true);
+            }
+          }}
           className="text-2xl text-rose-800 font-serif leading-relaxed"
         >
           {text}
         </motion.p>
       ))}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 6 }} className="fixed bottom-10 left-0 w-full text-center">
-        <span className="text-rose-300 text-xs animate-bounce">แตะเพื่อไปต่อ</span>
-      </motion.div>
-    </motion.div>
-  );
-};
 
-const StageInteractive = ({ onNext }: { onNext: () => void }) => {
-  const [revealed, setRevealed] = useState<number[]>([]);
-  const toggleReveal = (index: number) => {
-    if (!revealed.includes(index)) {
-      navigator.vibrate?.(50);
-      setRevealed([...revealed, index]);
-    }
-  };
-  const isAllRevealed = revealed.length === CONFIG.reasons.length;
-
-  return (
-    <div className="w-full px-6 text-center flex flex-col h-full justify-center">
-      <h2 className="text-xl font-bold text-rose-600 mb-6">ทำไมถึงรักเธอน่ะหรอ?</h2>
-      <div className="grid grid-cols-2 gap-3 mb-8 w-full">
-        {CONFIG.reasons.map((reason, index) => (
+      {/* ปุ่มจะปรากฎขึ้นมาเมื่อข้อความแสดงครบแล้วเท่านั้น */}
+      <div className="h-20 flex items-center justify-center mt-8">
+        {isFinished && (
           <motion.button
-            key={index}
-            onClick={() => toggleReveal(index)}
-            className={`h-28 rounded-2xl flex items-center justify-center p-2 shadow-sm transition-all touch-manipulation ${revealed.includes(index) ? "bg-white text-rose-600 border-2 border-rose-100" : "bg-rose-400 text-white active:scale-95"
-              }`}
+            initial={{ opacity: 0, scale: 0.5, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-          >
-            {revealed.includes(index) ? <span className="font-semibold text-sm">{reason}</span> : <Stars size={28} />}
-          </motion.button>
-        ))}
-      </div>
-      <div className="h-16 flex items-center justify-center">
-        {isAllRevealed && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
             onClick={onNext}
-            className="bg-rose-600 text-white px-8 py-3 rounded-full shadow-xl font-bold text-lg animate-pulse"
+            className="bg-rose-500 hover:bg-rose-600 text-white px-8 py-3 rounded-full flex items-center gap-2 shadow-lg shadow-rose-200 font-medium text-lg"
           >
-            ความลับสุดท้าย ❤️
+            <ArrowRight size={20} />
           </motion.button>
         )}
       </div>
@@ -154,9 +138,147 @@ const StageInteractive = ({ onNext }: { onNext: () => void }) => {
   );
 };
 
+const StageInteractive = ({ onNext }: { onNext: () => void }) => {
+  const [activeId, setActiveId] = useState<number | null>(null);
+  const [viewed, setViewed] = useState<number[]>([]);
+
+  // Effect: ตั้งเวลาปิดเอง 5 วินาที เมื่อมีรูปเปิดอยู่
+  useEffect(() => {
+    if (activeId !== null) {
+      const timer = setTimeout(() => {
+        setActiveId(null);
+      }, 5000); // 5000ms = 5 วินาที
+      return () => clearTimeout(timer);
+    }
+  }, [activeId]);
+
+  const handleCardClick = (id: number) => {
+    // ถ้ากำลังเปิดรูปอื่นอยู่ ห้ามกดซ้อน
+    if (activeId !== null) return;
+
+    setActiveId(id);
+    if (!viewed.includes(id)) {
+      setViewed([...viewed, id]);
+    }
+  };
+
+  // เช็คว่าดูครบทุกรูปหรือยัง
+  const isAllViewed = viewed.length === CONFIG.reasons.length;
+
+  return (
+    <div className="w-full h-full px-6 flex flex-col justify-center items-center relative">
+      <h2 className="text-xl font-bold text-rose-600 mb-6 z-10 font-serif">
+        เราอยู่ข้างเธอเสมอ
+      </h2>
+
+      {/* Grid 4 กล่อง */}
+      <div className="grid grid-cols-2 gap-4 w-full max-w-sm mb-20 z-10">
+        {CONFIG.reasons.map((item) => {
+          const isViewed = viewed.includes(item.id);
+          return (
+            <motion.div
+              key={item.id}
+              layoutId={`card-${item.id}`}
+              onClick={() => handleCardClick(item.id)}
+              className={`
+                relative h-32 rounded-2xl cursor-pointer shadow-sm overflow-hidden border-2
+                ${isViewed ? "border-rose-300" : "bg-rose-400 border-transparent"}
+              `}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center bg-white">
+                {isViewed ? (
+                  // --- แก้ไข: รูปสีปกติ (ไม่ใส่ grayscale) ---
+                  <motion.img
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    src={item.image}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  // ยังไม่ดู: โชว์ดาวบนพื้นหลังสีชมพู
+                  <div className="w-full h-full bg-rose-400 flex items-center justify-center">
+                    <Stars size={32} className="text-white animate-pulse" />
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* --- Popup Image (Auto Close 5s) --- */}
+      <AnimatePresence>
+        {activeId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
+            {/* pointer-events-none: ป้องกันการกดปิดเอง */}
+
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+
+            {CONFIG.reasons.map((item) => {
+              if (item.id !== activeId) return null;
+              return (
+                <motion.div
+                  key={item.id}
+                  layoutId={`card-${item.id}`}
+                  className="relative bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl z-50 flex flex-col pointer-events-auto"
+                >
+                  <div className="relative aspect-[4/3]">
+                    <img
+                      src={item.image}
+                      alt={item.text}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="p-6 text-center bg-white relative overflow-hidden">
+                    <h3 className="text-2xl font-bold text-rose-600 font-serif">
+                      {item.text}
+                    </h3>
+
+                    {/* Progress Bar ด้านล่าง: บอกเวลา 5 วินาที */}
+                    <motion.div
+                      initial={{ width: "100%" }}
+                      animate={{ width: "0%" }}
+                      transition={{ duration: 5, ease: "linear" }}
+                      className="absolute bottom-0 left-0 h-1.5 bg-rose-400"
+                    />
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ปุ่มไปต่อ (แสดงเมื่อดูครบ และไม่มีรูปขยายอยู่) */}
+      <div className="absolute bottom-20 h-16 flex items-center justify-center w-full z-0">
+        <AnimatePresence>
+          {isAllViewed && !activeId && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.5, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              onClick={onNext}
+              className="bg-rose-600 text-white px-8 py-3 rounded-full shadow-xl font-bold text-lg animate-bounce"
+            >
+              สุดท้าย ❤️
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
 const StageFinale = ({ onRestart }: { onRestart: () => void }) => {
   useEffect(() => {
-    // Effect พลุกระดาษ (Confetti) เหมือนเดิม
     const end = Date.now() + 3000;
     const interval: any = setInterval(() => {
       if (Date.now() > end) return clearInterval(interval);
@@ -176,22 +298,25 @@ const StageFinale = ({ onRestart }: { onRestart: () => void }) => {
         <h1 className="text-4xl font-bold text-rose-500 font-serif drop-shadow-sm">
           Happy Valentine's
         </h1>
-        <p className="text-lg text-rose-800 leading-relaxed mt-4">
-          ขอบคุณที่เข้ามาเป็น<br />ความสดใสให้กันนะ
-        </p>
 
-        {/* Gift Card */}
+        {/* --- ส่วนของขวัญ (เปลี่ยนเป็นดอกไม้) --- */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="w-full mx-auto mt-8 p-6 bg-white/80 backdrop-blur-sm rounded-xl shadow-xl border-dashed border-2 border-rose-300 max-w-[280px]"
+          className="w-full max-w-xs mx-auto mt-6 bg-white p-4 rounded-xl shadow-xl rotate-1 hover:rotate-0 transition-transform duration-300 border border-rose-100"
         >
-          <div className="text-4xl mb-2">🎁</div>
-          <p className="text-rose-600 font-bold text-xl">Special Dinner</p>
-          <p className="text-gray-500 font-medium">Tonight @ 19:00</p>
+          {/* รูปดอกไม้ */}
+          <div className="relative aspect-square rounded-lg overflow-hidden bg-rose-50 mb-4 shadow-inner">
+            <img
+              // คุณสามารถเปลี่ยน URL รูปดอกไม้ที่ชอบได้ตรงนี้ครับ
+              src="https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=1000&auto=format&fit=crop"
+              alt="Flower Bouquet"
+              className="object-cover w-full h-full transform hover:scale-110 transition-transform duration-700"
+            />
+          </div>
         </motion.div>
-        {/* --- ส่วนปุ่ม Replay แบบ Icon ใหญ่ --- */}
+        {/* --- ปุ่ม Replay (แบบ Icon หัวใจหมุน) --- */}
         <div className="h-24 flex items-start justify-center">
           <motion.button
             onClick={onRestart}
@@ -202,10 +327,7 @@ const StageFinale = ({ onRestart }: { onRestart: () => void }) => {
             whileTap={{ scale: 0.9 }}
             className="group relative p-4 text-rose-300 hover:text-rose-500 transition-colors duration-300"
           >
-            {/* 1. วงกลมลูกศร (Replay Arrow) */}
             <RotateCcw size={48} strokeWidth={1.5} className="drop-shadow-md" />
-
-            {/* 2. หัวใจตรงกลาง (Absolute Position) */}
             <div className="absolute inset-0 flex items-center justify-center pt-1">
               <motion.div
                 animate={{ scale: [1, 1.2, 1] }}
@@ -217,8 +339,6 @@ const StageFinale = ({ onRestart }: { onRestart: () => void }) => {
           </motion.button>
         </div>
       </div>
-
-
     </motion.div>
   );
 };
