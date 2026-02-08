@@ -8,72 +8,100 @@ import confetti from "canvas-confetti";
 // --- Configuration ---
 const CONFIG = {
   partnerName: "Teerak",
-  memoryImage: "us.jpg",
+  memoryImage: "/us.jpg", // ใส่ / นำหน้าชื่อไฟล์ใน public
   reassuranceText: [
     "ในวันที่เธอมีความสุข",
     "ในวันที่เธอมีความทุกข์",
     "หรือในวันที่เธอไม่สบายใจ",
     "เราพร้อมรับฟังและจะอยู่ข้างเธอเสมอ ❤️",
   ],
-  // --- แก้ไขส่วนนี้ (ใส่รูปที่ต้องการให้เด้งออกมา) ---
   reasons: [
     {
       id: 1,
       text: "ในตอนเธอยิ้มให้",
-      image: "smile-2.jpg"
+      image: "/smile-2.jpg"
     },
     {
       id: 2,
       text: "ในตอนที่เที่ยวด้วยกัน",
-      image: "travel.jpg"
+      image: "/travel.jpg"
     },
     {
       id: 3,
       text: "ในตอนที่กินของอร่อย",
-      image: "yummy.jpg"
+      image: "/yummy.jpg"
     },
     {
       id: 4,
       text: "และทุกๆตอน",
-      image: "all-time.jpg"
+      image: "/all-time.jpg"
     },
   ],
 };
 
 // --- Components ---
 
-// เพิ่ม prop: onStartMusic เพื่อรับคำสั่งเปิดเพลง
-const StageIntro = ({ onNext, onStartMusic }: { onNext: () => void, onStartMusic: () => void }) => {
+// Stage 0: Intro (รอ Load รูปเสร็จก่อนถึงกดได้)
+const StageIntro = ({
+  onNext,
+  onStartMusic,
+  isLoading
+}: {
+  onNext: () => void,
+  onStartMusic: () => void,
+  isLoading: boolean
+}) => {
 
   const handleStart = () => {
-    onStartMusic(); // สั่งเล่นเพลง
-    onNext();       // เปลี่ยนหน้า
+    if (!isLoading) {
+      onStartMusic();
+      onNext();
+    }
   };
 
   return (
     <motion.div
-      className="flex flex-col items-center justify-center text-center space-y-6 px-4"
+      className="flex flex-col items-center justify-center text-center space-y-8 px-4"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, y: -50 }}
     >
       <div className="relative cursor-pointer" onClick={handleStart}>
         <motion.div
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ repeat: Infinity, duration: 1.2 }}
-          className="text-rose-500 drop-shadow-2xl"
+          animate={{ scale: isLoading ? [1, 0.9, 1] : [1, 1.1, 1] }}
+          transition={{ repeat: Infinity, duration: isLoading ? 0.6 : 1.2 }}
+          className={`text-rose-500 drop-shadow-2xl ${isLoading ? "opacity-70 grayscale" : "opacity-100"}`}
         >
           <Heart size={100} fill="currentColor" />
         </motion.div>
       </div>
 
-      <button onClick={onNext} className="bg-rose-500 active:bg-rose-600 text-white px-8 py-3 rounded-full flex items-center gap-2 shadow-lg shadow-rose-200 font-medium text-lg touch-manipulation">
-        Get Start
-      </button>
+      <div className="space-y-2">
+        <button
+          onClick={handleStart}
+          disabled={isLoading}
+          className={`
+            px-8 py-3 rounded-full flex items-center gap-2 shadow-lg font-bold text-lg transition-all mx-auto
+            ${isLoading
+              ? "bg-rose-100 text-rose-400 cursor-wait"
+              : "bg-rose-500 active:bg-rose-600 text-white shadow-rose-200 animate-bounce"
+            }
+          `}
+        >
+          {isLoading ? (
+            <span className="flex items-center gap-2 text-sm">
+              กำลังเตรียมของขวัญ...
+            </span>
+          ) : (
+            <>Get Start <ArrowRight size={20} /></>
+          )}
+        </button>
+      </div>
     </motion.div>
   );
 };
 
+// Stage 1: Memory
 const StageMemory = ({ onNext }: { onNext: () => void }) => (
   <motion.div
     className="w-full px-6 flex flex-col items-center space-y-8"
@@ -85,7 +113,7 @@ const StageMemory = ({ onNext }: { onNext: () => void }) => (
       <div className="aspect-[4/5] w-full overflow-hidden rounded-sm bg-gray-100">
         <img src={CONFIG.memoryImage} alt="Memory" className="w-full h-full object-cover" />
       </div>
-      <div className="mt-4 text-center font-serif text-gray-600 italic text-lg">
+      <div className="mt-4 text-center text-rose-800 text-xl font-bold">
         "วันของเรา :)"
       </div>
     </div>
@@ -95,8 +123,8 @@ const StageMemory = ({ onNext }: { onNext: () => void }) => (
   </motion.div>
 );
 
+// Stage 2: Reassurance (ข้อความขึ้นครบ ปุ่มถึงโผล่)
 const StageReassurance = ({ onNext }: { onNext: () => void }) => {
-  // State สำหรับเช็คว่าข้อความขึ้นครบหรือยัง
   const [isFinished, setIsFinished] = useState(false);
 
   return (
@@ -106,20 +134,18 @@ const StageReassurance = ({ onNext }: { onNext: () => void }) => {
           key={index}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 1.8, duration: 1 }}
-          // ตรวจจับว่าบรรทัดสุดท้ายแสดงผลเสร็จหรือยัง
+          transition={{ delay: index * 1.5, duration: 0.8 }}
           onAnimationComplete={() => {
             if (index === CONFIG.reassuranceText.length - 1) {
               setIsFinished(true);
             }
           }}
-          className="text-2xl text-rose-800 font-serif leading-relaxed"
+          className="text-2xl text-rose-800 leading-relaxed font-medium"
         >
           {text}
         </motion.p>
       ))}
 
-      {/* ปุ่มจะปรากฎขึ้นมาเมื่อข้อความแสดงครบแล้วเท่านั้น */}
       <div className="h-20 flex items-center justify-center mt-8">
         {isFinished && (
           <motion.button
@@ -138,40 +164,36 @@ const StageReassurance = ({ onNext }: { onNext: () => void }) => {
   );
 };
 
+// Stage 3: Interactive (Auto close 5s)
 const StageInteractive = ({ onNext }: { onNext: () => void }) => {
   const [activeId, setActiveId] = useState<number | null>(null);
   const [viewed, setViewed] = useState<number[]>([]);
 
-  // Effect: ตั้งเวลาปิดเอง 5 วินาที เมื่อมีรูปเปิดอยู่
   useEffect(() => {
     if (activeId !== null) {
       const timer = setTimeout(() => {
         setActiveId(null);
-      }, 5000); // 5000ms = 5 วินาที
+      }, 5000); // 5 วินาทีปิดเอง
       return () => clearTimeout(timer);
     }
   }, [activeId]);
 
   const handleCardClick = (id: number) => {
-    // ถ้ากำลังเปิดรูปอื่นอยู่ ห้ามกดซ้อน
     if (activeId !== null) return;
-
     setActiveId(id);
     if (!viewed.includes(id)) {
       setViewed([...viewed, id]);
     }
   };
 
-  // เช็คว่าดูครบทุกรูปหรือยัง
   const isAllViewed = viewed.length === CONFIG.reasons.length;
 
   return (
     <div className="w-full h-full px-6 flex flex-col justify-center items-center relative">
-      <h2 className="text-xl font-bold text-rose-600 mb-6 z-10 font-serif">
+      <h2 className="text-2xl font-bold text-rose-600 mb-8 z-10 drop-shadow-sm">
         เราอยู่ข้างเธอเสมอ
       </h2>
 
-      {/* Grid 4 กล่อง */}
       <div className="grid grid-cols-2 gap-4 w-full max-w-sm mb-20 z-10">
         {CONFIG.reasons.map((item) => {
           const isViewed = viewed.includes(item.id);
@@ -181,15 +203,14 @@ const StageInteractive = ({ onNext }: { onNext: () => void }) => {
               layoutId={`card-${item.id}`}
               onClick={() => handleCardClick(item.id)}
               className={`
-                relative h-32 rounded-2xl cursor-pointer shadow-sm overflow-hidden border-2
-                ${isViewed ? "border-rose-300" : "bg-rose-400 border-transparent"}
+                relative h-32 rounded-2xl cursor-pointer shadow-sm overflow-hidden border-2 transition-colors
+                ${isViewed ? "border-rose-400 bg-white" : "bg-rose-400 border-transparent"}
               `}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <div className="absolute inset-0 flex items-center justify-center bg-white">
+              <div className="absolute inset-0 flex items-center justify-center">
                 {isViewed ? (
-                  // --- แก้ไข: รูปสีปกติ (ไม่ใส่ grayscale) ---
                   <motion.img
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -197,10 +218,7 @@ const StageInteractive = ({ onNext }: { onNext: () => void }) => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  // ยังไม่ดู: โชว์ดาวบนพื้นหลังสีชมพู
-                  <div className="w-full h-full bg-rose-400 flex items-center justify-center">
-                    <Stars size={32} className="text-white animate-pulse" />
-                  </div>
+                  <Stars size={32} className="text-white animate-pulse" />
                 )}
               </div>
             </motion.div>
@@ -208,13 +226,9 @@ const StageInteractive = ({ onNext }: { onNext: () => void }) => {
         })}
       </div>
 
-      {/* --- Popup Image (Auto Close 5s) --- */}
       <AnimatePresence>
         {activeId && (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none">
-            {/* pointer-events-none: ป้องกันการกดปิดเอง */}
-
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -238,11 +252,10 @@ const StageInteractive = ({ onNext }: { onNext: () => void }) => {
                     />
                   </div>
                   <div className="p-6 text-center bg-white relative overflow-hidden">
-                    <h3 className="text-2xl font-bold text-rose-600 font-serif">
+                    <h3 className="text-2xl font-bold text-rose-600">
                       {item.text}
                     </h3>
-
-                    {/* Progress Bar ด้านล่าง: บอกเวลา 5 วินาที */}
+                    {/* Progress Bar */}
                     <motion.div
                       initial={{ width: "100%" }}
                       animate={{ width: "0%" }}
@@ -257,8 +270,7 @@ const StageInteractive = ({ onNext }: { onNext: () => void }) => {
         )}
       </AnimatePresence>
 
-      {/* ปุ่มไปต่อ (แสดงเมื่อดูครบ และไม่มีรูปขยายอยู่) */}
-      <div className="absolute bottom-20 h-16 flex items-center justify-center w-full z-0">
+      <div className="absolute bottom-40 h-16 flex items-center justify-center w-full z-0">
         <AnimatePresence>
           {isAllViewed && !activeId && (
             <motion.button
@@ -268,7 +280,7 @@ const StageInteractive = ({ onNext }: { onNext: () => void }) => {
               onClick={onNext}
               className="bg-rose-600 text-white px-8 py-3 rounded-full shadow-xl font-bold text-lg animate-bounce"
             >
-              สุดท้าย ❤️
+              สุดท้าย
             </motion.button>
           )}
         </AnimatePresence>
@@ -277,6 +289,7 @@ const StageInteractive = ({ onNext }: { onNext: () => void }) => {
   );
 };
 
+// Stage 4: Finale
 const StageFinale = ({ onRestart }: { onRestart: () => void }) => {
   useEffect(() => {
     const end = Date.now() + 3000;
@@ -295,28 +308,24 @@ const StageFinale = ({ onRestart }: { onRestart: () => void }) => {
       className="text-center px-4 space-y-6 flex flex-col items-center h-full justify-center"
     >
       <div className="flex-1 flex flex-col justify-center items-center w-full">
-        <h1 className="text-4xl font-bold text-rose-500 font-serif drop-shadow-sm">
+        <h1 className="text-4xl font-bold text-rose-500 drop-shadow-sm">
           Happy Valentine's
         </h1>
 
-        {/* --- ส่วนของขวัญ (เปลี่ยนเป็นดอกไม้) --- */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
           className="w-full max-w-xs mx-auto mt-6 bg-white p-4 rounded-xl shadow-xl rotate-1 hover:rotate-0 transition-transform duration-300 border border-rose-100"
         >
-          {/* รูปดอกไม้ */}
           <div className="relative aspect-square rounded-lg overflow-hidden bg-rose-50 mb-4 shadow-inner">
             <img
-              // คุณสามารถเปลี่ยน URL รูปดอกไม้ที่ชอบได้ตรงนี้ครับ
-              src="hand.jpg"
-              alt="Flower Bouquet"
+              src="/hand.jpg"
+              alt="Flower"
               className="object-cover w-full h-full transform hover:scale-110 transition-transform duration-700"
             />
           </div>
         </motion.div>
-        {/* --- ปุ่ม Replay (แบบ Icon หัวใจหมุน) --- */}
         <div className="h-24 flex items-start justify-center">
           <motion.button
             onClick={onRestart}
@@ -343,49 +352,58 @@ const StageFinale = ({ onRestart }: { onRestart: () => void }) => {
   );
 };
 
-// --- Main App Component ---
+// --- Main App Controller ---
 export default function ValentineApp() {
   const [stage, setStage] = useState(0);
-
-  // -- ส่วนจัดการเพลง --
+  const [isLoading, setIsLoading] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
 
-  // เริ่มเล่นเพลง (จะถูกเรียกเมื่อ User กดปุ่มเริ่ม)
+  // Preload Images
+  useEffect(() => {
+    const preloadImages = async () => {
+      const imageUrls = [
+        CONFIG.memoryImage,
+        ...CONFIG.reasons.map(r => r.image),
+        "/hand.jpg",
+      ];
+
+      const promises = imageUrls.map((src) => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.src = src;
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      });
+
+      await Promise.all(promises);
+      setIsLoading(false);
+    };
+
+    preloadImages();
+  }, []);
+
   const startMusic = () => {
     if (audioRef.current) {
-      audioRef.current.volume = 0.4; // ปรับระดับเสียง 40% ไม่ให้ดังเกินไป
-      audioRef.current.play().then(() => {
-        setIsMusicPlaying(true);
-      }).catch(e => console.log("Audio play error:", e));
+      audioRef.current.volume = 0.4;
+      audioRef.current.play().then(() => setIsMusicPlaying(true)).catch(() => { });
     }
   };
 
-  // ปุ่มเปิด/ปิดเสียง
   const toggleMusic = () => {
     if (audioRef.current) {
-      if (isMusicPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
+      if (isMusicPlaying) audioRef.current.pause();
+      else audioRef.current.play();
       setIsMusicPlaying(!isMusicPlaying);
     }
   };
 
-  useEffect(() => {
-    const img = new Image();
-    img.src = CONFIG.memoryImage;
-  }, []);
-
   return (
     <div className="fixed inset-0 w-full h-[100dvh] bg-gradient-to-br from-rose-50 via-white to-rose-100 overflow-hidden touch-none select-none">
 
-      {/* --- ส่วน Audio Element (ซ่อนไว้) --- */}
-      {/* ใส่ไฟล์เพลงชื่อ bgm.mp3 ในโฟลเดอร์ public */}
       <audio ref={audioRef} loop src="/bgm.mp3" />
 
-      {/* --- ปุ่มควบคุมเพลง (มุมขวาบน) --- */}
       <button
         onClick={toggleMusic}
         className="absolute top-4 right-4 z-50 p-2 bg-white/50 backdrop-blur-sm rounded-full text-rose-600 shadow-sm active:scale-95 transition-all"
@@ -418,12 +436,13 @@ export default function ValentineApp() {
               key="0"
               onNext={() => setStage(1)}
               onStartMusic={startMusic}
+              isLoading={isLoading}
             />
           )}
           {stage === 1 && <StageMemory key="1" onNext={() => setStage(2)} />}
           {stage === 2 && <StageReassurance key="2" onNext={() => setStage(3)} />}
           {stage === 3 && <StageInteractive key="3" onNext={() => setStage(4)} />}
-          {stage === 4 && <StageFinale key="4" onRestart={() => setStage(1)} />}
+          {stage === 4 && <StageFinale key="4" onRestart={() => setStage(0)} />}
         </AnimatePresence>
       </main>
 
@@ -431,8 +450,7 @@ export default function ValentineApp() {
         {[0, 1, 2, 3, 4].map((s) => (
           <div
             key={s}
-            className={`h-1.5 rounded-full transition-all duration-500 ${s <= stage ? "w-6 bg-rose-500" : "w-1.5 bg-rose-200"
-              }`}
+            className={`h-1.5 rounded-full transition-all duration-500 ${s <= stage ? "w-6 bg-rose-500" : "w-1.5 bg-rose-200"}`}
           />
         ))}
       </div>
